@@ -1,6 +1,8 @@
 "use strict";
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
 Object.defineProperty(exports, "__esModule", { value: true });
-const tslib_1 = require("tslib");
-tslib_1.__exportStar(require("./request-method.enum"), exports);
-tslib_1.__exportStar(require("./http-status.enum"), exports);
-tslib_1.__exportStar(require("./shutdown-signal.enum"), exports);
+__export(require("./request-method.enum"));
+__export(require("./http-status.enum"));
+__export(require("./shutdown-signal.enum"));
