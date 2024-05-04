@@ -1,0 +1,10 @@
+{
+    "name": "shared",
+    "version": "0.0.0",
+    "main": "./index.ts",
+    "types": "./index.ts",
+    "license": "UNLICENSED",
+    "devDependencies": {
+      "typescript": "^4.5.3"
+    }
+  }
