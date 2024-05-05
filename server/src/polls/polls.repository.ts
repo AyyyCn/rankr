@@ -31,6 +31,7 @@ export class PollsRepository {
       votesPerVoter,
       participants: {},
       adminID: userID,
+      hasStarted: false,
     };
 
     this.logger.log(
@@ -105,23 +106,32 @@ return initialPoll;
         new Redis.Command('JSON.SET', [key, participantPath, JSON.stringify(name)])
     );
     
-    const pollJSON = await this.redisClient.sendCommand(
-        new Redis.Command('JSON.GET', [key, '.'])
-    ) as string;
+    return this.getPoll(pollID);
+  } catch (e) {
+    this.logger.error(
+      `Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
+    );
 
-      const poll = JSON.parse(pollJSON) as Poll;
+    throw e;
+  }
+}
 
-      this.logger.debug(
-        `Current Participants for pollID: ${pollID}:`,
-        poll.participants,
-      );
+async removeParticipant(pollID: string, userID: string): Promise<Poll> {
+  this.logger.log(`removing userID: ${userID} from poll: ${pollID}`);
 
-      return poll;
-    } catch (e) {
+  const key = `polls:${pollID}`;
+  const participantPath = `.participants.${userID}`;
+
+  try {
+    await this.redisClient.sendCommand(new Redis.Command('JSON.DEL', [key, participantPath]));
+
+    return this.getPoll(pollID);
+  } catch (e) {
       this.logger.error(
-        `Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
+        `Failed to remove userID: ${userID} from poll: ${pollID}`,
+        e,
       );
-      throw e;
+      throw new InternalServerErrorException('Failed to remove participant');
     }
   }
 }
