@@ -1,8 +1,9 @@
-import { IoAdapter } from '@nestjs/platform-socket.io'
-import { INestApplication, INestApplicationContext, Logger } from '@nestjs/common';
+import { INestApplicationContext, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ServerOptions } from 'socket.io';
-
+import { JwtService } from '@nestjs/jwt';
+import { IoAdapter } from '@nestjs/platform-socket.io';
+import { Server, ServerOptions } from 'socket.io';
+import { SocketWithAuth } from './polls/types';
 
 
 export class SocketIOAdapter extends IoAdapter {
@@ -31,8 +32,12 @@ export class SocketIOAdapter extends IoAdapter {
             cors,
         };
 
-        return super.createIOServer(port , optionsWithCORS);
-
+        const jwtService = this.app.get(JwtService);
+        const server: Server = super.createIOServer(port, optionsWithCORS);
+    
+        server.of('polls').use(createTokenMiddleware(jwtService, this.logger));
+    
+        return server;
 
     }
 }
