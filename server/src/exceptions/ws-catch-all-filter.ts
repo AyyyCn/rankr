@@ -2,8 +2,7 @@ import {
     ArgumentsHost,
     Catch,
     ExceptionFilter,
-    HttpException,
-  } from '@nestjs/common';
+    BadRequestException,  } from '@nestjs/common';
   import { SocketWithAuth } from 'src/polls/types';
   import { WsBadRequestException, WsUnknownException } from './ws-exceptions';
   
@@ -12,9 +11,9 @@ import {
     catch(exception: Error, host: ArgumentsHost) {
       const socket: SocketWithAuth = host.switchToWs().getClient();
   
-      if (exception instanceof HttpException) {
+      if (exception instanceof BadRequestException) {
         const exceptionData = exception.getResponse();
-        const exceptionMessage = exceptionData['message'] ?? exceptionData;
+        const exceptionMessage = exceptionData['message'] ?? exceptionData?? exception.name;
   
         const wsException = new WsBadRequestException(exceptionMessage);
         socket.emit('exception', wsException.getError());

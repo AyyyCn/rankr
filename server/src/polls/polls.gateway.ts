@@ -1,5 +1,11 @@
-import { Logger, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import {
+    BadRequestException,
+    Logger,
+    UseFilters,
+    UsePipes,
+    ValidationPipe,
+  } from '@nestjs/common';
+  import {
     OnGatewayInit, WebSocketServer, WebSocketGateway, OnGatewayConnection, OnGatewayDisconnect,
     SubscribeMessage,
 } from '@nestjs/websockets';
@@ -45,6 +51,6 @@ export class PollsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
 
     @SubscribeMessage('test')
     async test() {
-        throw new Error('Hey');
+        throw new BadRequestException('error test');
     }
 }
