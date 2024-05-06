@@ -37,6 +37,7 @@
         "@nestjs/jwt": "^10.2.0",
         "@nestjs/platform-socket.io": "^10.3.8",
         "@nestjs/websockets": "^10.3.8",
+        "express": "^4.19.2",
         "jsonwebtoken": "^9.0.2",
         "nestjs-redis": "1.2.6"
     }
