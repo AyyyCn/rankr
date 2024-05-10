@@ -1,4 +1,3 @@
-
 import { Injectable, Logger } from '@nestjs/common';
 import { createPollID, createUserID } from 'src/ids';
 import { PollsRepository } from './polls.repository';

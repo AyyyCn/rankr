@@ -1,4 +1,3 @@
-
 // service types
 export type CreatePollFields = {
   topic: string;

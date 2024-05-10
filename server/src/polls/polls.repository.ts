@@ -2,9 +2,9 @@ import { Inject, InternalServerErrorException } from '@nestjs/common';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
-import { IORedisKey } from '../redis/redis.module';
+import { IORedisKey } from 'src/redis.module';
 import { AddParticipantData, CreatePollData } from './types';
-import { Poll } from '../../../shared';
+import { Poll } from 'shared';
 
 @Injectable()
 export class PollsRepository {
@@ -42,21 +42,13 @@ export class PollsRepository {
     const key = `polls:${pollID}`;
 
     try {
-      /*await this.redisClient
+      await this.redisClient
         .multi([
           ['send_command', 'JSON.SET', key, '.', JSON.stringify(initialPoll)],
           ['expire', key, this.ttl],
         ])
         .exec();
-      return initialPoll;*/
-      await this.redisClient
-     .multi([
-        [this.redisClient.sendCommand(new Redis.Command('JSON.SET', [key, '.', JSON.stringify(initialPoll)]))],
-        [this.redisClient.sendCommand(new Redis.Command('expire', [key, this.ttl]))]
-     ])
-    .exec();
-
-return initialPoll;
+      return initialPoll;
     } catch (e) {
       this.logger.error(
         `Failed to add poll ${JSON.stringify(initialPoll)}\n${e}`,
@@ -71,9 +63,11 @@ return initialPoll;
     const key = `polls:${pollID}`;
 
     try {
-    const currentPoll = await this.redisClient.sendCommand(
-        new Redis.Command('JSON.GET', [key, '.'])
-    )as string;
+      const currentPoll = await this.redisClient.send_command(
+        'JSON.GET',
+        key,
+        '.',
+      );
 
       this.logger.verbose(currentPoll);
 
@@ -101,13 +95,18 @@ return initialPoll;
     const participantPath = `.participants.${userID}`;
 
     try {
-      await this.redisClient.sendCommand(
-        new Redis.Command('JSON.SET', [key, participantPath, JSON.stringify(name)])
-    );
-    
-    const pollJSON = await this.redisClient.sendCommand(
-        new Redis.Command('JSON.GET', [key, '.'])
-    ) as string;
+      await this.redisClient.send_command(
+        'JSON.SET',
+        key,
+        participantPath,
+        JSON.stringify(name),
+      );
+
+      const pollJSON = await this.redisClient.send_command(
+        'JSON.GET',
+        key,
+        '.',
+      );
 
       const poll = JSON.parse(pollJSON) as Poll;
 
