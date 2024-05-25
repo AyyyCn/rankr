@@ -5,10 +5,12 @@ import Create from './pages/Create';
 import Join from './pages/Join';
 import Welcome from './pages/Welcome';
 import { AppPage, state } from './state';
+import { WaitingRoom } from './pages/WaitingRoom';
 
 const routeConfig = {
   [AppPage.Welcome]: Welcome,
   [AppPage.Create]: Create,
+  [AppPage.WaitingRoom]: WaitingRoom,
   [AppPage.Join]: Join,
 };
 
