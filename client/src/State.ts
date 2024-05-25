@@ -20,7 +20,7 @@ export type AppState = {
     accessToken?: string;
 };
 
-const state: AppState = proxy({
+  const state: AppState = proxy({
   isLoading: false,
   currentPage: AppPage.Welcome
 });

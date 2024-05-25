@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Poll } from 'shared/poll-types';
 import { makeRequest } from '../api';
 import CountSelector from '../components/ui/CountSelector';
-import { actions, AppPage } from '../state';
+import { actions, AppPage } from '../State';
+
 
 const Create: React.FC = () => {
     const [pollTopic, setPollTopic] = useState('');

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { MdCancel } from 'react-icons/md';
-import { Nominations } from '../pollState';
 import BottomSheet, { BottemSheetProps } from './ui/BottomSheet';
+import { Nominations } from 'shared/poll-types';
+//import { Nominations } from '../pollState';
+
 
 type NominationFormProps = {
   title?: string;

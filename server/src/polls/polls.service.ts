@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Poll } from '../../../shared/poll-types';
+import { Poll } from 'shared/poll-types';
 import { createPollID, createUserID, createNominationID } from 'src/ids';
 import getResults from './getResults';
 import { PollsRepository } from './polls.repository';

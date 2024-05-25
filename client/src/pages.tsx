@@ -4,7 +4,7 @@ import { useSnapshot } from 'valtio';
 import Create from './pages/Create';
 import Join from './pages/Join';
 import Welcome from './pages/Welcome';
-import { AppPage, state } from './state';
+import  { state, AppPage } from './State';
 import { WaitingRoom } from './pages/WaitingRoom';
 
 const routeConfig = {

@@ -17,7 +17,6 @@ exports.PollsRepository = void 0;
 const common_1 = require("@nestjs/common");
 const common_2 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
-const ioredis_1 = require("ioredis");
 const redis_module_1 = require("../redis/redis.module");
 let PollsRepository = PollsRepository_1 = class PollsRepository {
     constructor(configService, redisClient) {
@@ -42,16 +41,8 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         try {
             await this.redisClient
                 .multi([
-                [
-                    this.redisClient.sendCommand(new ioredis_1.Redis.Command('JSON.SET', [
-                        key,
-                        '.',
-                        JSON.stringify(initialPoll),
-                    ])),
-                ],
-                [
-                    this.redisClient.sendCommand(new ioredis_1.Redis.Command('expire', [key, this.ttl])),
-                ],
+                ['send_command', 'JSON.SET', key, '.', JSON.stringify(initialPoll)],
+                ['expire', key, this.ttl],
             ])
                 .exec();
             return initialPoll;
@@ -65,7 +56,7 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         this.logger.log(`Attempting to get poll with: ${pollID}`);
         const key = `polls:${pollID}`;
         try {
-            const currentPoll = (await this.redisClient.sendCommand(new ioredis_1.Redis.Command('JSON.GET', [key, '.'])));
+            const currentPoll = await this.redisClient.send_command('JSON.GET', key, '.');
             this.logger.verbose(currentPoll);
             return JSON.parse(currentPoll);
         }
@@ -79,11 +70,7 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         const key = `polls:${pollID}`;
         const participantPath = `.participants.${userID}`;
         try {
-            await this.redisClient.sendCommand(new ioredis_1.Redis.Command('JSON.SET', [
-                key,
-                participantPath,
-                JSON.stringify(name),
-            ]));
+            await this.redisClient.send_command('JSON.SET', key, participantPath, JSON.stringify(name));
             return this.getPoll(pollID);
         }
         catch (e) {
@@ -96,7 +83,7 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         const key = `polls:${pollID}`;
         const participantPath = `.participants.${userID}`;
         try {
-            await this.redisClient.sendCommand(new ioredis_1.Redis.Command('JSON.DEL', [key, participantPath]));
+            await this.redisClient.send_command('JSON.DEL', key, participantPath);
             return this.getPoll(pollID);
         }
         catch (e) {
@@ -109,11 +96,7 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         const key = `polls:${pollID}`;
         const nominationPath = `.nominations.${nominationID}`;
         try {
-            await this.redisClient.sendCommand(new ioredis_1.Redis.Command('JSON.SET', [
-                key,
-                nominationPath,
-                JSON.stringify(nomination),
-            ]));
+            await this.redisClient.send_command('JSON.SET', key, nominationPath, JSON.stringify(nomination));
             return this.getPoll(pollID);
         }
         catch (e) {
@@ -126,7 +109,7 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         const key = `polls:${pollID}`;
         const nominationPath = `.nominations.${nominationID}`;
         try {
-            await this.redisClient.sendCommand(new ioredis_1.Redis.Command('JSON.DEL', [key, nominationPath]));
+            await this.redisClient.send_command('JSON.DEL', key, nominationPath);
             return this.getPoll(pollID);
         }
         catch (e) {
@@ -138,11 +121,7 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         this.logger.log(`setting hasStarted for poll: ${pollID}`);
         const key = `polls:${pollID}`;
         try {
-            await this.redisClient.sendCommand(new ioredis_1.Redis.Command('JSON.SET', [
-                key,
-                '.hasStarted',
-                JSON.stringify(true),
-            ]));
+            await this.redisClient.send_command('JSON.SET', key, '.hasStarted', JSON.stringify(true));
             return this.getPoll(pollID);
         }
         catch (e) {
@@ -155,11 +134,7 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         const key = `polls:${pollID}`;
         const rankingsPath = `.rankings.${userID}`;
         try {
-            await this.redisClient.sendCommand(new ioredis_1.Redis.Command('JSON.SET', [
-                key,
-                rankingsPath,
-                JSON.stringify(rankings),
-            ]));
+            await this.redisClient.send_command('JSON.SET', key, rankingsPath, JSON.stringify(rankings));
             return this.getPoll(pollID);
         }
         catch (e) {
@@ -172,11 +147,7 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         const key = `polls:${pollID}`;
         const resultsPath = `.results`;
         try {
-            await this.redisClient.sendCommand(new ioredis_1.Redis.Command('JSON.SET', [
-                key,
-                resultsPath,
-                JSON.stringify(results),
-            ]));
+            await this.redisClient.send_command('JSON.SET', key, resultsPath, JSON.stringify(results));
             return this.getPoll(pollID);
         }
         catch (e) {
@@ -188,9 +159,7 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         const key = `polls:${pollID}`;
         this.logger.log(`deleting poll: ${pollID}`);
         try {
-            await this.redisClient.sendCommand(new ioredis_1.Redis.Command('JSON.SET', [
-                key,
-            ]));
+            await this.redisClient.send_command('JSON.DEL', key);
         }
         catch (e) {
             this.logger.error(`Failed to delete poll: ${pollID}`, e);
@@ -202,7 +171,6 @@ exports.PollsRepository = PollsRepository;
 exports.PollsRepository = PollsRepository = PollsRepository_1 = __decorate([
     (0, common_2.Injectable)(),
     __param(1, (0, common_1.Inject)(redis_module_1.IORedisKey)),
-    __metadata("design:paramtypes", [config_1.ConfigService,
-        ioredis_1.Redis])
+    __metadata("design:paramtypes", [config_1.ConfigService, Object])
 ], PollsRepository);
 //# sourceMappingURL=polls.repository.js.map

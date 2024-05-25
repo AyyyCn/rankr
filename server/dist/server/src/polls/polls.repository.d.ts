@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
 import { AddNominationData, AddParticipantData, AddParticipantRankingsData, CreatePollData } from './types';
-import { Poll, Results } from '../../../shared';
+import { Poll, Results } from 'shared';
 export declare class PollsRepository {
     private readonly redisClient;
     private readonly ttl;

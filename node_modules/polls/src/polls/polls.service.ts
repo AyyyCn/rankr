@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Poll } from 'shared/poll-types';
 import { createPollID, createUserID, createNominationID } from 'src/ids';
+import getResults from './getResults';
 import { PollsRepository } from './polls.repository';
 import {
   AddNominationFields,
@@ -11,6 +12,7 @@ import {
   RejoinPollFields,
   SubmitRankingsFields,
 } from './types';
+
 @Injectable()
 export class PollsService {
   private readonly logger = new Logger(PollsService.name);
@@ -86,6 +88,7 @@ export class PollsService {
 
     return joinedPoll;
   }
+
   async addParticipant(addParticipant: AddParticipantFields): Promise<Poll> {
     return this.pollsRepository.addParticipant(addParticipant);
   }
@@ -104,6 +107,7 @@ export class PollsService {
       return updatedPoll;
     }
   }
+
   async getPoll(pollID: string): Promise<Poll> {
     return this.pollsRepository.getPoll(pollID);
   }
@@ -127,7 +131,6 @@ export class PollsService {
     return this.pollsRepository.removeNomination(pollID, nominationID);
   }
 
-
   async startPoll(pollID: string): Promise<Poll> {
     return this.pollsRepository.startPoll(pollID);
   }
@@ -142,5 +145,21 @@ export class PollsService {
     }
 
     return this.pollsRepository.addParticipantRankings(rankingsData);
+  }
+
+  async computeResults(pollID: string): Promise<Poll> {
+    const poll = await this.pollsRepository.getPoll(pollID);
+
+    const results = getResults(
+      poll.rankings,
+      poll.nominations,
+      poll.votesPerVoter,
+    );
+
+    return this.pollsRepository.addResults(pollID, results);
+  }
+
+  async cancelPoll(pollID: string): Promise<void> {
+    await this.pollsRepository.deletePoll(pollID);
   }
 }

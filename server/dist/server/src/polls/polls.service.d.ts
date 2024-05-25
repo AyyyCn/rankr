@@ -1,5 +1,5 @@
 import { JwtService } from '@nestjs/jwt';
-import { Poll } from '../../../shared/poll-types';
+import { Poll } from 'shared/poll-types';
 import { PollsRepository } from './polls.repository';
 import { AddNominationFields, AddParticipantFields, CreatePollFields, JoinPollFields, RejoinPollFields, SubmitRankingsFields } from './types';
 export declare class PollsService {

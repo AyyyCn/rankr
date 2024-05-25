@@ -12,6 +12,14 @@ export type Nominations = {
 export type Rankings = {
     [userID: string]: NominationID[];
 };
+export type RoundResult = {
+    votes: Array<{
+        nominationID: NominationID;
+        count: number;
+        text: string;
+    }>;
+    totalVotes: number;
+};
 export type Results = Array<{
     nominationID: NominationID;
     nominationText: string;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { actions, AppPage } from '../state';
+import { actions, AppPage } from '../State';
 const Welcome: React.FC = () => {
   return (
     <div className="flex flex-col justify-center items-center h-full">
