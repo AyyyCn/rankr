@@ -9,6 +9,7 @@ export enum AppPage {
   Welcome = 'welcome',
   Create = 'create',
   WaitingRoom = 'waiting-room',
+  Voting = 'voting',
   Join = 'join',
 }
 type Me = {
@@ -97,13 +98,28 @@ const actions = {
           actions,
         })
       );
-    } else {
-      state.socket.connect();
+      return;
     }
+
+    if (!state.socket.connected) {
+      state.socket.connect();
+      return;
+    }
+
+    actions.stopLoading();
+    
   },
+  
   updatePoll: (poll: Poll): void => {
     state.poll = poll;
   },
+  submitRankings: (rankings: string[]): void => {
+    state.socket?.emit('submit_rankings', { rankings });
+  },
+  cancelPoll: (): void => {
+    state.socket?.emit('cancel_poll');
+  },
+
   addWsError: (error: WsError): void => {
     state.wsErrors = [
       ...state.wsErrors,
