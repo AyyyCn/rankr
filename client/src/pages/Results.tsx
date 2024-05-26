@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSnapshot } from 'valtio';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
 import ResultCard from '../components/ui/ResultCard';
-import { actions, state } from '../state';
+import { actions, state } from '../State';
 
 export const Results: React.FC = () => {
   const { poll, isAdmin, participantCount, rankingsCount } = useSnapshot(state);

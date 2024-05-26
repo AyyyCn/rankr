@@ -6,7 +6,7 @@ import { useSnapshot } from 'valtio';
 import NominationForm from '../components/NominationForm';
 import ParticipantList from '../components/ParticipantList';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
-import { actions, state } from '../state';
+import { actions, state } from '../State';
 import { colorizeText } from '../util';
 
 export const WaitingRoom: React.FC = () => {
@@ -32,7 +32,7 @@ export const WaitingRoom: React.FC = () => {
     participantToRemove && actions.removeParticipant(participantToRemove);
     setIsConfirmationOpen(false);
   };
-  
+
   useEffect(() => {
     console.log('Waiting room useEffect');
     actions.initializeSocket();

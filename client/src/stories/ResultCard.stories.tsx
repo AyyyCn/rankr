@@ -55,5 +55,5 @@ const results: Results = [
 
 export const ResultCardLong = Template.bind({});
 ResultCardLong.args = {
-  result: resultLong,
+  results,
 };

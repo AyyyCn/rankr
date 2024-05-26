@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSnapshot } from 'valtio';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
 import RankedCheckBox from '../components/ui/RankedCheckBox';
-import { state, actions } from '../state';
+import { state, actions } from '../State';
 
 export const Voting: React.FC = () => {
   const currentState = useSnapshot(state);

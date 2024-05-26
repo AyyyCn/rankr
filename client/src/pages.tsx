@@ -34,7 +34,7 @@ const Pages: React.FC = () => {
     if (currentState.me?.id && currentState.poll?.hasStarted) {
       actions.setPage(AppPage.Voting);
     }
-    
+
     if (currentState.me?.id && currentState.hasVoted) {
       actions.setPage(AppPage.Results);
     }
