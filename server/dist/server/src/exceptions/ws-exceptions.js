@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.WsUnknownException = exports.WsUnauthorizedException = exports.WsBadRequestException = exports.WsTypeException = void 0;
 const websockets_1 = require("@nestjs/websockets");
 class WsTypeException extends websockets_1.WsException {
-    type;
     constructor(type, message) {
         const error = {
             type,

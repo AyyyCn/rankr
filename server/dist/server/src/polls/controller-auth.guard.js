@@ -14,10 +14,9 @@ exports.ControllerAuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 let ControllerAuthGuard = ControllerAuthGuard_1 = class ControllerAuthGuard {
-    jwtService;
-    logger = new common_1.Logger(ControllerAuthGuard_1.name);
     constructor(jwtService) {
         this.jwtService = jwtService;
+        this.logger = new common_1.Logger(ControllerAuthGuard_1.name);
     }
     canActivate(context) {
         const request = context.switchToHttp().getRequest();
@@ -30,7 +29,7 @@ let ControllerAuthGuard = ControllerAuthGuard_1 = class ControllerAuthGuard {
             request.name = payload.name;
             return true;
         }
-        catch {
+        catch (_a) {
             throw new common_1.ForbiddenException('Invalid authorization token');
         }
     }

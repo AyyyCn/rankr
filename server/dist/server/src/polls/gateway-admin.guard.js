@@ -16,12 +16,10 @@ const jwt_1 = require("@nestjs/jwt");
 const ws_exceptions_1 = require("../exceptions/ws-exceptions");
 const polls_service_1 = require("./polls.service");
 let GatewayAdminGuard = GatewayAdminGuard_1 = class GatewayAdminGuard {
-    pollsService;
-    jwtService;
-    logger = new common_1.Logger(GatewayAdminGuard_1.name);
     constructor(pollsService, jwtService) {
         this.pollsService = pollsService;
         this.jwtService = jwtService;
+        this.logger = new common_1.Logger(GatewayAdminGuard_1.name);
     }
     async canActivate(context) {
         const socket = context.switchToWs().getClient();
@@ -40,7 +38,7 @@ let GatewayAdminGuard = GatewayAdminGuard_1 = class GatewayAdminGuard {
             }
             return true;
         }
-        catch {
+        catch (_a) {
             throw new ws_exceptions_1.WsUnauthorizedException('Admin privileges required');
         }
     }

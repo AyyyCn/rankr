@@ -19,13 +19,10 @@ const config_1 = require("@nestjs/config");
 const common_2 = require("@nestjs/common");
 const redis_module_1 = require("../redis/redis.module");
 let PollsRepository = PollsRepository_1 = class PollsRepository {
-    configService;
-    redisClient;
-    ttl;
-    logger = new common_2.Logger(PollsRepository_1.name);
     constructor(configService, redisClient) {
         this.configService = configService;
         this.redisClient = redisClient;
+        this.logger = new common_2.Logger(PollsRepository_1.name);
         this.ttl = this.configService.get('POLL_DURATION') || 7200;
     }
     async createPoll({ votesPerVoter, topic, pollID, userID }) {

@@ -22,23 +22,22 @@ const socket_io_1 = require("socket.io");
 const gateway_admin_guard_1 = require("./gateway-admin.guard");
 const dtos_1 = require("./dtos");
 let PollsGateway = PollsGateway_1 = class PollsGateway {
-    pollsService;
-    logger = new common_1.Logger(PollsGateway_1.name);
     constructor(pollsService) {
         this.pollsService = pollsService;
+        this.logger = new common_1.Logger(PollsGateway_1.name);
     }
-    io;
     afterInit() {
         this.logger.log(`Websocket Gateway initialized.`);
     }
     async handleConnection(client) {
+        var _a, _b, _c;
         const sockets = this.io.sockets;
         this.logger.debug(`Socket connected with userID: ${client.userID}, pollID: ${client.pollID}, and name: "${client.name}"`);
         this.logger.log(`WS Client with id: ${client.id} connected!`);
         this.logger.debug(`Number of connected sockets: ${sockets.size}`);
         const roomName = client.pollID;
         await client.join(roomName);
-        const connectedClients = this.io.adapter.rooms?.get(roomName)?.size ?? 0;
+        const connectedClients = (_c = (_b = (_a = this.io.adapter.rooms) === null || _a === void 0 ? void 0 : _a.get(roomName)) === null || _b === void 0 ? void 0 : _b.size) !== null && _c !== void 0 ? _c : 0;
         this.logger.debug(`userID: ${client.userID} joined room with name: ${roomName}`);
         this.logger.debug(`Total clients connected to room '${roomName}': ${connectedClients}`);
         const updatedPoll = await this.pollsService.addParticipant({
@@ -49,11 +48,12 @@ let PollsGateway = PollsGateway_1 = class PollsGateway {
         this.io.to(roomName).emit('poll_updated', updatedPoll);
     }
     async handleDisconnect(client) {
+        var _a, _b, _c;
         const sockets = this.io.sockets;
         const { pollID, userID } = client;
         const updatedPoll = await this.pollsService.removeParticipant(pollID, userID);
         const roomName = client.pollID;
-        const clientCount = this.io.adapter.rooms?.get(roomName)?.size ?? 0;
+        const clientCount = (_c = (_b = (_a = this.io.adapter.rooms) === null || _a === void 0 ? void 0 : _a.get(roomName)) === null || _b === void 0 ? void 0 : _b.size) !== null && _c !== void 0 ? _c : 0;
         this.logger.log(`Disconnected socket id: ${client.id}`);
         this.logger.debug(`Number of connected sockets: ${sockets.size}`);
         this.logger.debug(`Total clients connected to room '${roomName}': ${clientCount}`);
