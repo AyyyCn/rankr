@@ -7,5 +7,25 @@ services:
       - '6379:6379'
     volumes:
       - 'redisdata:/data'
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    ports:
+      - '3000:3001'
+    depends_on:
+      - redis
+    volumes:
+      - ./server:/app
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    ports:
+      - '8080:8081'
+    depends_on:
+      - server
 volumes:
   redisdata:

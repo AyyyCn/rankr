@@ -38,7 +38,7 @@ let GatewayAdminGuard = GatewayAdminGuard_1 = class GatewayAdminGuard {
             }
             return true;
         }
-        catch {
+        catch (_a) {
             throw new ws_exceptions_1.WsUnauthorizedException('Admin privileges required');
         }
     }

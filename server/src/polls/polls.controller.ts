@@ -16,6 +16,7 @@ export class PollsController {
   }
   @Post('/join')
   async join(@Body() joinPollDto: JoinPollDto) {
+    console.log("hello from polls controller")
     const result = await this.pollsService.joinPoll(joinPollDto);
     return result;
   }

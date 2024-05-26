@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Poll } from '../../../shared/poll-types';
+import { Poll } from 'shared/poll-types';
 import { createPollID, createUserID, createNominationID } from 'src/ids';
 import getResults from './getResults';
 import { PollsRepository } from './polls.repository';
@@ -23,16 +23,18 @@ export class PollsService {
   async createPoll(fields: CreatePollFields) {
     const pollID = createPollID();
     const userID = createUserID();
+    
 
     const createdPoll = await this.pollsRepository.createPoll({
       ...fields,
       pollID,
       userID,
     });
+    console.log("hhhoops444")
 
-    this.logger.debug(
+    /*this.logger.debug(
       `Creating token string for pollID: ${createdPoll.id} and userID: ${userID}`,
-    );
+    );*/
 
     const signedString = this.jwtService.sign(
       {
@@ -43,7 +45,7 @@ export class PollsService {
         subject: userID,
       },
     );
-
+      console.log("hhhoops")
     return {
       poll: createdPoll,
       accessToken: signedString,

@@ -1,30 +1,24 @@
-import { Inject, InternalServerErrorException } from '@nestjs/common';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { IORedisKey } from '../redis/redis.module';
+import { IORedisKey } from 'src/redis/redis.module';
 import { AddNominationData, AddParticipantData, AddParticipantRankingsData, CreatePollData } from './types';
-import { Poll, Results } from '../../../shared';
+import { Poll, Results } from 'shared';
 
 @Injectable()
 export class PollsRepository {
-  // to use time-to-live from configuration
-  private readonly ttl: string;
+  private readonly ttl: number;
   private readonly logger = new Logger(PollsRepository.name);
 
   constructor(
-    configService: ConfigService,
+    private configService: ConfigService,
     @Inject(IORedisKey) private readonly redisClient: Redis,
   ) {
-    this.ttl = configService.get('POLL_DURATION');
+    this.ttl = this.configService.get<number>('POLL_DURATION') || 7200;
   }
 
-  async createPoll({
-    votesPerVoter,
-    topic,
-    pollID,
-    userID,
-  }: CreatePollData): Promise<Poll> {
+  async createPoll({ votesPerVoter, topic, pollID, userID }: CreatePollData): Promise<Poll> {
     const initialPoll = {
       id: pollID,
       topic,
@@ -36,49 +30,26 @@ export class PollsRepository {
       adminID: userID,
       hasStarted: false,
     };
-
     this.logger.log(
-      `Creating new poll: ${JSON.stringify(initialPoll, null, 2)} with TTL ${
-        this.ttl
-      }`,
+      `Creating new poll: ${JSON.stringify(initialPoll, null, 2)} with TTL ${this.ttl}`,
     );
 
     const key = `polls:${pollID}`;
 
     try {
-      /*await this.redisClient
-        .multi([
-          ['send_command', 'JSON.SET', key, '.', JSON.stringify(initialPoll)],
-          ['expire', key, this.ttl],
-        ])
-        .exec();
-      return initialPoll;*/
       await this.redisClient
-        .multi([
-          [
-            this.redisClient.sendCommand(
-              new Redis.Command('JSON.SET', [
-                key,
-                '.',
-                JSON.stringify(initialPoll),
-              ]),
-            ),
-          ],
-          [
-            this.redisClient.sendCommand(
-              new Redis.Command('expire', [key, this.ttl]),
-            ),
-          ],
-        ])
-        .exec();
+        .multi() // Start a new transaction
+        .set(key, JSON.stringify(initialPoll)) // Add SET command to the transaction
+        .expire(key, this.ttl) // Add EXPIRE command to the transaction
+        .exec(); // Execute the transaction
 
       return initialPoll;
     } catch (e) {
-      this.logger.error(
-        `Failed to add poll ${JSON.stringify(initialPoll)}\n${e}`,
-      );
-      throw new InternalServerErrorException();
+      // Handle errors
+      throw new InternalServerErrorException(`Failed to add poll to Redis: ${e.message}`);
     }
+  
+    
   }
 
   async getPoll(pollID: string): Promise<Poll> {
@@ -87,56 +58,52 @@ export class PollsRepository {
     const key = `polls:${pollID}`;
 
     try {
-      const currentPoll = (await this.redisClient.sendCommand(
-        new Redis.Command('JSON.GET', [key, '.']),
-      )) as string;
+      const currentPoll = await this.redisClient.get(key);
 
       this.logger.verbose(currentPoll);
 
-      // if (currentPoll?.hasStarted) {
-      //   throw new BadRequestException('The poll has already started');
-      // }
-
       return JSON.parse(currentPoll);
     } catch (e) {
-      this.logger.error(`Failed to get pollID ${pollID}`);
+      this.logger.error(`Failed to get pollID ${pollID}`, e);
       throw new InternalServerErrorException(`Failed to get pollID ${pollID}`);
     }
   }
 
-  async addParticipant({
-    pollID,
-    userID,
-    name,
-  }: AddParticipantData): Promise<Poll> {
+  async addParticipant({ pollID, userID, name }: AddParticipantData): Promise<Poll> {
     this.logger.log(
       `Attempting to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
     );
 
     const key = `polls:${pollID}`;
-    const participantPath = `.participants.${userID}`;
 
     try {
-      await this.redisClient.sendCommand(
-        new Redis.Command('JSON.SET', [
-          key,
-          participantPath,
-          JSON.stringify(name),
-        ]),
-      );
+      // Fetch the current poll
+      const currentPoll = await this.redisClient.get(key);
+      if (!currentPoll) {
+        throw new InternalServerErrorException(`Poll with ID ${pollID} not found`);
+      }
 
-      return this.getPoll(pollID);
+      const poll = JSON.parse(currentPoll);
+      poll.participants = poll.participants || {};
+      poll.participants[userID] = name;
+
+      // Save the updated poll back to Redis
+      await this.redisClient.set(key, JSON.stringify(poll));
+
+      return poll;
     } catch (e) {
       this.logger.error(
         `Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
+        e,
       );
-
       throw new InternalServerErrorException(
         `Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
       );
     }
   }
 
+
+  
   async removeParticipant(pollID: string, userID: string): Promise<Poll> {
     this.logger.log(`removing userID: ${userID} from poll: ${pollID}`);
 
@@ -144,9 +111,7 @@ export class PollsRepository {
     const participantPath = `.participants.${userID}`;
 
     try {
-      await this.redisClient.sendCommand(
-        new Redis.Command('JSON.DEL', [key, participantPath]),
-      );
+      await this.redisClient.send_command('JSON.DEL', key, participantPath);
 
       return this.getPoll(pollID);
     } catch (e) {
@@ -171,14 +136,12 @@ export class PollsRepository {
     const nominationPath = `.nominations.${nominationID}`;
 
     try {
-      await this.redisClient.sendCommand(
-        new Redis.Command('JSON.SET', [
-          key,
-          nominationPath,
-          JSON.stringify(nomination),
-        ]),
+      await this.redisClient.send_command(
+        'JSON.SET',
+        key,
+        nominationPath,
+        JSON.stringify(nomination),
       );
-      
 
       return this.getPoll(pollID);
     } catch (e) {
@@ -201,10 +164,8 @@ export class PollsRepository {
     const nominationPath = `.nominations.${nominationID}`;
 
     try {
-      await this.redisClient.sendCommand(
-        new Redis.Command('JSON.DEL', [key, nominationPath]),
-      );
-      
+      await this.redisClient.send_command('JSON.DEL', key, nominationPath);
+
       return this.getPoll(pollID);
     } catch (e) {
       this.logger.error(
@@ -224,12 +185,11 @@ export class PollsRepository {
     const key = `polls:${pollID}`;
 
     try {
-      await this.redisClient.sendCommand(
-        new Redis.Command('JSON.SET', [
-          key,
-          '.hasStarted',
-          JSON.stringify(true),
-        ]),
+      await this.redisClient.send_command(
+        'JSON.SET',
+        key,
+        '.hasStarted',
+        JSON.stringify(true),
       );
 
       return this.getPoll(pollID);
@@ -255,12 +215,11 @@ export class PollsRepository {
     const rankingsPath = `.rankings.${userID}`;
 
     try {
-      await this.redisClient.sendCommand(
-        new Redis.Command('JSON.SET', [
-          key,
-          rankingsPath,
-          JSON.stringify(rankings),
-        ]),
+      await this.redisClient.send_command(
+        'JSON.SET',
+        key,
+        rankingsPath,
+        JSON.stringify(rankings),
       );
 
       return this.getPoll(pollID);
@@ -274,6 +233,7 @@ export class PollsRepository {
       );
     }
   }
+
   async addResults(pollID: string, results: Results): Promise<Poll> {
     this.logger.log(
       `Attempting to add results to pollID: ${pollID}`,
@@ -284,13 +244,11 @@ export class PollsRepository {
     const resultsPath = `.results`;
 
     try {
-      await this.redisClient.sendCommand(
-        new Redis.Command('JSON.SET', 
-        [
-          key,
-          resultsPath,
-          JSON.stringify(results),
-        ]),
+      await this.redisClient.send_command(
+        'JSON.SET',
+        key,
+        resultsPath,
+        JSON.stringify(results),
       );
 
       return this.getPoll(pollID);
@@ -312,11 +270,7 @@ export class PollsRepository {
     this.logger.log(`deleting poll: ${pollID}`);
 
     try {
-      await this.redisClient.sendCommand(
-        new Redis.Command('JSON.SET', [
-          key,
-        ]),
-        );
+      await this.redisClient.send_command('JSON.DEL', key);
     } catch (e) {
       this.logger.error(`Failed to delete poll: ${pollID}`, e);
       throw new InternalServerErrorException(
