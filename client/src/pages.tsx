@@ -4,6 +4,7 @@ import { CSSTransition } from 'react-transition-group';
 import { useSnapshot } from 'valtio';
 import Create from './pages/Create';
 import Join from './pages/Join';
+import { Results } from './pages/Results';
 import { Voting } from './pages/Voting';
 import { WaitingRoom } from './pages/WaitingRoom';
 import Welcome from './pages/Welcome';
@@ -15,6 +16,7 @@ const routeConfig = {
   [AppPage.Join]: Join,
   [AppPage.WaitingRoom]: WaitingRoom,
   [AppPage.Voting]: Voting,
+  [AppPage.Results]: Results,
 };
 
 const Pages: React.FC = () => {
@@ -32,10 +34,15 @@ const Pages: React.FC = () => {
     if (currentState.me?.id && currentState.poll?.hasStarted) {
       actions.setPage(AppPage.Voting);
     }
-
-    // add sequential check here
-  }, [currentState.me?.id, currentState.poll?.hasStarted]);
-
+    
+    if (currentState.me?.id && currentState.hasVoted) {
+      actions.setPage(AppPage.Results);
+    }
+  }, [
+    currentState.me?.id,
+    currentState.poll?.hasStarted,
+    currentState.hasVoted,
+  ]);
   return (
     <>
       {Object.entries(routeConfig).map(([page, Component]) => (
