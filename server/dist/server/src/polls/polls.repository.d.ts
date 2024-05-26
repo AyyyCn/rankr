@@ -10,7 +10,7 @@ export declare class PollsRepository {
     constructor(configService: ConfigService, redisClient: Redis);
     createPoll({ votesPerVoter, topic, pollID, userID }: CreatePollData): Promise<Poll>;
     getPoll(pollID: string): Promise<Poll>;
-    addParticipant({ pollID, userID, name, }: AddParticipantData): Promise<Poll>;
+    addParticipant({ pollID, userID, name }: AddParticipantData): Promise<Poll>;
     removeParticipant(pollID: string, userID: string): Promise<Poll>;
     addNomination({ pollID, nominationID, nomination, }: AddNominationData): Promise<Poll>;
     removeNomination(pollID: string, nominationID: string): Promise<Poll>;

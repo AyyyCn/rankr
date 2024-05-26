@@ -11,12 +11,12 @@ export class PollsController {
   constructor(private pollsService: PollsService) {}
   @Post()
   async create(@Body() createPollDto: CreatePollDto) {
-    console.log("hello from polls controller")
     const result = await this.pollsService.createPoll(createPollDto);
     return result;
   }
   @Post('/join')
   async join(@Body() joinPollDto: JoinPollDto) {
+    console.log("hello from polls controller")
     const result = await this.pollsService.joinPoll(joinPollDto);
     return result;
   }

@@ -58,25 +58,31 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         this.logger.log(`Attempting to get poll with: ${pollID}`);
         const key = `polls:${pollID}`;
         try {
-            const currentPoll = await this.redisClient.send_command('JSON.GET', key, '.');
+            const currentPoll = await this.redisClient.get(key);
             this.logger.verbose(currentPoll);
             return JSON.parse(currentPoll);
         }
         catch (e) {
-            this.logger.error(`Failed to get pollID ${pollID}`);
+            this.logger.error(`Failed to get pollID ${pollID}`, e);
             throw new common_1.InternalServerErrorException(`Failed to get pollID ${pollID}`);
         }
     }
-    async addParticipant({ pollID, userID, name, }) {
+    async addParticipant({ pollID, userID, name }) {
         this.logger.log(`Attempting to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`);
         const key = `polls:${pollID}`;
-        const participantPath = `.participants.${userID}`;
         try {
-            await this.redisClient.send_command('JSON.SET', key, participantPath, JSON.stringify(name));
-            return this.getPoll(pollID);
+            const currentPoll = await this.redisClient.get(key);
+            if (!currentPoll) {
+                throw new common_1.InternalServerErrorException(`Poll with ID ${pollID} not found`);
+            }
+            const poll = JSON.parse(currentPoll);
+            poll.participants = poll.participants || {};
+            poll.participants[userID] = name;
+            await this.redisClient.set(key, JSON.stringify(poll));
+            return poll;
         }
         catch (e) {
-            this.logger.error(`Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`);
+            this.logger.error(`Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`, e);
             throw new common_1.InternalServerErrorException(`Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`);
         }
     }

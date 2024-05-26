@@ -58,49 +58,43 @@ export class PollsRepository {
     const key = `polls:${pollID}`;
 
     try {
-      const currentPoll = await this.redisClient.send_command(
-        'JSON.GET',
-        key,
-        '.',
-      );
+      const currentPoll = await this.redisClient.get(key);
 
       this.logger.verbose(currentPoll);
 
-      // if (currentPoll?.hasStarted) {
-      //   throw new BadRequestException('The poll has already started');
-      // }
-
       return JSON.parse(currentPoll);
     } catch (e) {
-      this.logger.error(`Failed to get pollID ${pollID}`);
+      this.logger.error(`Failed to get pollID ${pollID}`, e);
       throw new InternalServerErrorException(`Failed to get pollID ${pollID}`);
     }
   }
 
-  async addParticipant({
-    pollID,
-    userID,
-    name,
-  }: AddParticipantData): Promise<Poll> {
+  async addParticipant({ pollID, userID, name }: AddParticipantData): Promise<Poll> {
     this.logger.log(
       `Attempting to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
     );
 
     const key = `polls:${pollID}`;
-    const participantPath = `.participants.${userID}`;
 
     try {
-      await this.redisClient.send_command(
-        'JSON.SET',
-        key,
-        participantPath,
-        JSON.stringify(name),
-      );
+      // Fetch the current poll
+      const currentPoll = await this.redisClient.get(key);
+      if (!currentPoll) {
+        throw new InternalServerErrorException(`Poll with ID ${pollID} not found`);
+      }
 
-      return this.getPoll(pollID);
+      const poll = JSON.parse(currentPoll);
+      poll.participants = poll.participants || {};
+      poll.participants[userID] = name;
+
+      // Save the updated poll back to Redis
+      await this.redisClient.set(key, JSON.stringify(poll));
+
+      return poll;
     } catch (e) {
       this.logger.error(
         `Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
+        e,
       );
       throw new InternalServerErrorException(
         `Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
@@ -108,6 +102,8 @@ export class PollsRepository {
     }
   }
 
+
+  
   async removeParticipant(pollID: string, userID: string): Promise<Poll> {
     this.logger.log(`removing userID: ${userID} from poll: ${pollID}`);
 
