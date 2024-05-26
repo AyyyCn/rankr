@@ -32,7 +32,10 @@ export const createSocketWithHandlers = ({ socketIOUrl, state, actions }: Create
 
   socket.on('connect_error', () => {
     console.log(`Failed to connect socket`);
-
+    actions.addWsError({
+      type: 'Connection Error',
+      message: 'Failed to connect to the poll',
+    });
     actions.stopLoading();
   });
 
@@ -44,6 +47,10 @@ export const createSocketWithHandlers = ({ socketIOUrl, state, actions }: Create
     }, 3000);
   });
 
+  socket.on('exception', (error) => {
+    console.log('WS exception: ', error);
+    actions.addWsError(error);
+  });
   
   socket.on('poll_updated', (poll) => {
     actions.updatePoll(poll);

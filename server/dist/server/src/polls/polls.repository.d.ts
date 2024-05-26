@@ -12,10 +12,10 @@ export declare class PollsRepository {
     getPoll(pollID: string): Promise<Poll>;
     addParticipant({ pollID, userID, name }: AddParticipantData): Promise<Poll>;
     removeParticipant(pollID: string, userID: string): Promise<Poll>;
-    addNomination({ pollID, nominationID, nomination, }: AddNominationData): Promise<Poll>;
+    addNomination({ pollID, nominationID, nomination }: AddNominationData): Promise<Poll>;
     removeNomination(pollID: string, nominationID: string): Promise<Poll>;
     startPoll(pollID: string): Promise<Poll>;
-    addParticipantRankings({ pollID, userID, rankings, }: AddParticipantRankingsData): Promise<Poll>;
+    addParticipantRankings({ pollID, userID, rankings }: AddParticipantRankingsData): Promise<Poll>;
     addResults(pollID: string, results: Results): Promise<Poll>;
     deletePoll(pollID: string): Promise<void>;
 }

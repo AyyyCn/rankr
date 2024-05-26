@@ -35,32 +35,16 @@ let PollsService = PollsService_1 = class PollsService {
             pollID,
             userID,
         });
-        console.log(...oo_oo(`3143491000_33_4_33_29_4`, "hhhoops444"));
+        console.log(...oo_oo(`4168517100_33_4_33_29_4`, "hhhoops444"));
         const signedString = this.jwtService.sign({
             pollID: createdPoll.id,
             name: fields.name,
         }, {
             subject: userID,
         });
-        console.log(...oo_oo(`3143491000_48_6_48_28_4`, "hhhoops"));
+        console.log(...oo_oo(`4168517100_48_6_48_28_4`, "hhhoops"));
         return {
             poll: createdPoll,
-            accessToken: signedString,
-        };
-    }
-    async joinPoll(fields) {
-        const userID = (0, ids_1.createUserID)();
-        this.logger.debug(`Fetching poll with ID: ${fields.pollID} for user with ID: ${userID}`);
-        const joinedPoll = await this.pollsRepository.getPoll(fields.pollID);
-        this.logger.debug(`Creating token string for pollID: ${joinedPoll.id} and userID: ${userID}`);
-        const signedString = this.jwtService.sign({
-            pollID: joinedPoll.id,
-            name: fields.name,
-        }, {
-            subject: userID,
-        });
-        return {
-            poll: joinedPoll,
             accessToken: signedString,
         };
     }
@@ -78,6 +62,27 @@ let PollsService = PollsService_1 = class PollsService {
             const updatedPoll = await this.pollsRepository.removeParticipant(pollID, userID);
             return updatedPoll;
         }
+    }
+    async joinPoll(fields) {
+        const userID = (0, ids_1.createUserID)();
+        this.logger.debug(`Fetching poll with ID: ${fields.pollID} for user with ID: ${userID}`);
+        const joinedPoll = await this.pollsRepository.getPoll(fields.pollID);
+        this.logger.debug(`Creating token string for pollID: ${joinedPoll.id} and userID: ${userID}`);
+        const updatedPoll = await this.pollsRepository.addParticipant({
+            pollID: fields.pollID,
+            userID,
+            name: fields.name,
+        });
+        const signedString = this.jwtService.sign({
+            pollID: updatedPoll.id,
+            name: fields.name,
+        }, {
+            subject: userID,
+        });
+        return {
+            poll: updatedPoll,
+            accessToken: signedString,
+        };
     }
     async getPoll(pollID) {
         return this.pollsRepository.getPoll(pollID);

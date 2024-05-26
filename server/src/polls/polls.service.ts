@@ -52,35 +52,7 @@ export class PollsService {
     };
   }
 
-  async joinPoll(fields: JoinPollFields) {
-    const userID = createUserID();
-
-    this.logger.debug(
-      `Fetching poll with ID: ${fields.pollID} for user with ID: ${userID}`,
-    );
-
-    const joinedPoll = await this.pollsRepository.getPoll(fields.pollID);
-
-    this.logger.debug(
-      `Creating token string for pollID: ${joinedPoll.id} and userID: ${userID}`,
-    );
-
-    const signedString = this.jwtService.sign(
-      {
-        pollID: joinedPoll.id,
-        name: fields.name,
-      },
-      {
-        subject: userID,
-      },
-    );
-
-    return {
-      poll: joinedPoll,
-      accessToken: signedString,
-    };
-  }
-
+  
   async rejoinPoll(fields: RejoinPollFields) {
     this.logger.debug(
       `Rejoining poll with ID: ${fields.pollID} for user with ID: ${fields.userID} with name: ${fields.name}`,
@@ -94,6 +66,7 @@ export class PollsService {
   async addParticipant(addParticipant: AddParticipantFields): Promise<Poll> {
     return this.pollsRepository.addParticipant(addParticipant);
   }
+
 
   async removeParticipant(
     pollID: string,
@@ -109,6 +82,43 @@ export class PollsService {
       return updatedPoll;
     }
   }
+
+  async joinPoll(fields: JoinPollFields) {
+    const userID = createUserID();
+
+    this.logger.debug(
+      `Fetching poll with ID: ${fields.pollID} for user with ID: ${userID}`,
+    );
+
+    const joinedPoll = await this.pollsRepository.getPoll(fields.pollID);
+
+    this.logger.debug(
+      `Creating token string for pollID: ${joinedPoll.id} and userID: ${userID}`,
+    );
+
+    // Add participant to the poll
+    const updatedPoll = await this.pollsRepository.addParticipant({
+      pollID: fields.pollID,
+      userID,
+      name: fields.name,
+    });
+
+    const signedString = this.jwtService.sign(
+      {
+        pollID: updatedPoll.id,
+        name: fields.name,
+      },
+      {
+        subject: userID,
+      },
+    );
+
+    return {
+      poll: updatedPoll,
+      accessToken: signedString,
+    };
+  }
+
 
   async getPoll(pollID: string): Promise<Poll> {
     return this.pollsRepository.getPoll(pollID);

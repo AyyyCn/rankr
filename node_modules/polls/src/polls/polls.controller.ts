@@ -1,4 +1,4 @@
-import { Req, UsePipes, ValidationPipe } from '@nestjs/common';import { UseGuards } from '@nestjs/common';
+import { Get, Param, Req, UsePipes, ValidationPipe } from '@nestjs/common';import { UseGuards } from '@nestjs/common';
 import { Body, Controller, Post } from '@nestjs/common';
 import { ControllerAuthGuard } from './controller-auth.guard';
 import { CreatePollDto, JoinPollDto } from './dtos';
@@ -9,6 +9,13 @@ import { RequestWithAuth } from './types';
 @Controller('polls')
 export class PollsController {
   constructor(private pollsService: PollsService) {}
+  @Get('get/:id')
+  
+    async getPoll(@Param('id') id : string){
+      const result = await this.pollsService.getPoll(id);
+      return result;
+    }
+  
   @Post()
   async create(@Body() createPollDto: CreatePollDto) {
     const result = await this.pollsService.createPoll(createPollDto);

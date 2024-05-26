@@ -11,13 +11,13 @@ export declare class PollsService {
         poll: Poll;
         accessToken: string;
     }>;
+    rejoinPoll(fields: RejoinPollFields): Promise<Poll>;
+    addParticipant(addParticipant: AddParticipantFields): Promise<Poll>;
+    removeParticipant(pollID: string, userID: string): Promise<Poll | void>;
     joinPoll(fields: JoinPollFields): Promise<{
         poll: Poll;
         accessToken: string;
     }>;
-    rejoinPoll(fields: RejoinPollFields): Promise<Poll>;
-    addParticipant(addParticipant: AddParticipantFields): Promise<Poll>;
-    removeParticipant(pollID: string, userID: string): Promise<Poll | void>;
     getPoll(pollID: string): Promise<Poll>;
     addNomination({ pollID, userID, text, }: AddNominationFields): Promise<Poll>;
     removeNomination(pollID: string, nominationID: string): Promise<Poll>;

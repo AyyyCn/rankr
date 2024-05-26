@@ -4,6 +4,7 @@ import { RequestWithAuth } from './types';
 export declare class PollsController {
     private pollsService;
     constructor(pollsService: PollsService);
+    getPoll(id: string): Promise<import("shared").Poll>;
     create(createPollDto: CreatePollDto): Promise<{
         poll: import("shared").Poll;
         accessToken: string;

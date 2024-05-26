@@ -1,6 +1,5 @@
-import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Inject, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { IORedisKey } from 'src/redis/redis.module';
 import { AddNominationData, AddParticipantData, AddParticipantRankingsData, CreatePollData } from './types';
@@ -19,7 +18,7 @@ export class PollsRepository {
   }
 
   async createPoll({ votesPerVoter, topic, pollID, userID }: CreatePollData): Promise<Poll> {
-    const initialPoll = {
+    const initialPoll: Poll = {
       id: pollID,
       topic,
       votesPerVoter,
@@ -30,26 +29,22 @@ export class PollsRepository {
       adminID: userID,
       hasStarted: false,
     };
-    this.logger.log(
-      `Creating new poll: ${JSON.stringify(initialPoll, null, 2)} with TTL ${this.ttl}`,
-    );
+
+    this.logger.log(`Creating new poll: ${JSON.stringify(initialPoll, null, 2)} with TTL ${this.ttl}`);
 
     const key = `polls:${pollID}`;
 
     try {
-      await this.redisClient
-        .multi() // Start a new transaction
-        .set(key, JSON.stringify(initialPoll)) // Add SET command to the transaction
-        .expire(key, this.ttl) // Add EXPIRE command to the transaction
-        .exec(); // Execute the transaction
+      await this.redisClient.multi()
+        .set(key, JSON.stringify(initialPoll))
+        .expire(key, this.ttl)
+        .exec();
 
       return initialPoll;
     } catch (e) {
-      // Handle errors
+      this.logger.error(`Failed to add poll to Redis: ${e.message}`, e);
       throw new InternalServerErrorException(`Failed to add poll to Redis: ${e.message}`);
     }
-  
-    
   }
 
   async getPoll(pollID: string): Promise<Poll> {
@@ -59,6 +54,10 @@ export class PollsRepository {
 
     try {
       const currentPoll = await this.redisClient.get(key);
+
+      if (!currentPoll) {
+        throw new InternalServerErrorException(`Poll with ID ${pollID} not found`);
+      }
 
       this.logger.verbose(currentPoll);
 
@@ -70,15 +69,13 @@ export class PollsRepository {
   }
 
   async addParticipant({ pollID, userID, name }: AddParticipantData): Promise<Poll> {
-    this.logger.log(
-      `Attempting to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
-    );
+    this.logger.log(`Attempting to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`);
 
     const key = `polls:${pollID}`;
 
     try {
-      // Fetch the current poll
       const currentPoll = await this.redisClient.get(key);
+
       if (!currentPoll) {
         throw new InternalServerErrorException(`Poll with ID ${pollID} not found`);
       }
@@ -87,195 +84,171 @@ export class PollsRepository {
       poll.participants = poll.participants || {};
       poll.participants[userID] = name;
 
-      // Save the updated poll back to Redis
       await this.redisClient.set(key, JSON.stringify(poll));
 
       return poll;
     } catch (e) {
-      this.logger.error(
-        `Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
-        e,
-      );
-      throw new InternalServerErrorException(
-        `Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
-      );
+      this.logger.error(`Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`, e);
+      throw new InternalServerErrorException(`Failed to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`);
     }
   }
 
-
-  
   async removeParticipant(pollID: string, userID: string): Promise<Poll> {
-    this.logger.log(`removing userID: ${userID} from poll: ${pollID}`);
+    this.logger.log(`Removing userID: ${userID} from poll: ${pollID}`);
 
     const key = `polls:${pollID}`;
-    const participantPath = `.participants.${userID}`;
 
     try {
-      await this.redisClient.send_command('JSON.DEL', key, participantPath);
+      const currentPoll = await this.redisClient.get(key);
 
-      return this.getPoll(pollID);
+      if (!currentPoll) {
+        throw new InternalServerErrorException(`Poll with ID ${pollID} not found`);
+      }
+
+      const poll = JSON.parse(currentPoll);
+      delete poll.participants[userID];
+
+      await this.redisClient.set(key, JSON.stringify(poll));
+
+      return poll;
     } catch (e) {
-      this.logger.error(
-        `Failed to remove userID: ${userID} from poll: ${pollID}`,
-        e,
-      );
+      this.logger.error(`Failed to remove userID: ${userID} from poll: ${pollID}`, e);
       throw new InternalServerErrorException('Failed to remove participant');
     }
   }
 
-  async addNomination({
-    pollID,
-    nominationID,
-    nomination,
-  }: AddNominationData): Promise<Poll> {
-    this.logger.log(
-      `Attempting to add a nomination with nominationID/nomination: ${nominationID}/${nomination.text} to pollID: ${pollID}`,
-    );
+  async addNomination({ pollID, nominationID, nomination }: AddNominationData): Promise<Poll> {
+    this.logger.log(`Attempting to add a nomination with nominationID/nomination: ${nominationID}/${nomination.text} to pollID: ${pollID}`);
 
     const key = `polls:${pollID}`;
-    const nominationPath = `.nominations.${nominationID}`;
 
     try {
-      await this.redisClient.send_command(
-        'JSON.SET',
-        key,
-        nominationPath,
-        JSON.stringify(nomination),
-      );
+      const currentPoll = await this.redisClient.get(key);
 
-      return this.getPoll(pollID);
+      if (!currentPoll) {
+        throw new InternalServerErrorException(`Poll with ID ${pollID} not found`);
+      }
+
+      const poll = JSON.parse(currentPoll);
+      poll.nominations = poll.nominations || {};
+      poll.nominations[nominationID] = nomination;
+
+      await this.redisClient.set(key, JSON.stringify(poll));
+
+      return poll;
     } catch (e) {
-      this.logger.error(
-        `Failed to add a nomination with nominationID/text: ${nominationID}/${nomination.text} to pollID: ${pollID}`,
-        e,
-      );
-      throw new InternalServerErrorException(
-        `Failed to add a nomination with nominationID/text: ${nominationID}/${nomination.text} to pollID: ${pollID}`,
-      );
+      this.logger.error(`Failed to add a nomination with nominationID/nomination: ${nominationID}/${nomination.text} to pollID: ${pollID}`, e);
+      throw new InternalServerErrorException(`Failed to add a nomination with nominationID/nomination: ${nominationID}/${nomination.text} to pollID: ${pollID}`);
     }
   }
 
   async removeNomination(pollID: string, nominationID: string): Promise<Poll> {
-    this.logger.log(
-      `removing nominationID: ${nominationID} from poll: ${pollID}`,
-    );
+    this.logger.log(`Removing nominationID: ${nominationID} from poll: ${pollID}`);
 
     const key = `polls:${pollID}`;
-    const nominationPath = `.nominations.${nominationID}`;
 
     try {
-      await this.redisClient.send_command('JSON.DEL', key, nominationPath);
+      const currentPoll = await this.redisClient.get(key);
 
-      return this.getPoll(pollID);
+      if (!currentPoll) {
+        throw new InternalServerErrorException(`Poll with ID ${pollID} not found`);
+      }
+
+      const poll = JSON.parse(currentPoll);
+      delete poll.nominations[nominationID];
+
+      await this.redisClient.set(key, JSON.stringify(poll));
+
+      return poll;
     } catch (e) {
-      this.logger.error(
-        `Failed to remove nominationID: ${nominationID} from poll: ${pollID}`,
-        e,
-      );
-
-      throw new InternalServerErrorException(
-        `Failed to remove nominationID: ${nominationID} from poll: ${pollID}`,
-      );
+      this.logger.error(`Failed to remove nominationID: ${nominationID} from poll: ${pollID}`, e);
+      throw new InternalServerErrorException(`Failed to remove nominationID: ${nominationID} from poll: ${pollID}`);
     }
   }
 
   async startPoll(pollID: string): Promise<Poll> {
-    this.logger.log(`setting hasStarted for poll: ${pollID}`);
+    this.logger.log(`Setting hasStarted for poll: ${pollID}`);
 
     const key = `polls:${pollID}`;
 
     try {
-      await this.redisClient.send_command(
-        'JSON.SET',
-        key,
-        '.hasStarted',
-        JSON.stringify(true),
-      );
+      const currentPoll = await this.redisClient.get(key);
 
-      return this.getPoll(pollID);
+      if (!currentPoll) {
+        throw new InternalServerErrorException(`Poll with ID ${pollID} not found`);
+      }
+
+      const poll = JSON.parse(currentPoll);
+      poll.hasStarted = true;
+
+      await this.redisClient.set(key, JSON.stringify(poll));
+
+      return poll;
     } catch (e) {
-      this.logger.error(`Failed set hasStarted for poll: ${pollID}`, e);
-      throw new InternalServerErrorException(
-        'The was an error starting the poll',
-      );
+      this.logger.error(`Failed to set hasStarted for poll: ${pollID}`, e);
+      throw new InternalServerErrorException('There was an error starting the poll');
     }
   }
 
-  async addParticipantRankings({
-    pollID,
-    userID,
-    rankings,
-  }: AddParticipantRankingsData): Promise<Poll> {
-    this.logger.log(
-      `Attempting to add rankings for userID/name: ${userID} to pollID: ${pollID}`,
-      rankings,
-    );
+  async addParticipantRankings({ pollID, userID, rankings }: AddParticipantRankingsData): Promise<Poll> {
+    this.logger.log(`Attempting to add rankings for userID: ${userID} to pollID: ${pollID}`, rankings);
 
     const key = `polls:${pollID}`;
-    const rankingsPath = `.rankings.${userID}`;
 
     try {
-      await this.redisClient.send_command(
-        'JSON.SET',
-        key,
-        rankingsPath,
-        JSON.stringify(rankings),
-      );
+      const currentPoll = await this.redisClient.get(key);
 
-      return this.getPoll(pollID);
+      if (!currentPoll) {
+        throw new InternalServerErrorException(`Poll with ID ${pollID} not found`);
+      }
+
+      const poll = JSON.parse(currentPoll);
+      poll.rankings = poll.rankings || {};
+      poll.rankings[userID] = rankings;
+
+      await this.redisClient.set(key, JSON.stringify(poll));
+
+      return poll;
     } catch (e) {
-      this.logger.error(
-        `Failed to add a rankings for userID/name: ${userID}/ to pollID: ${pollID}`,
-        rankings,
-      );
-      throw new InternalServerErrorException(
-        'There was an error starting the poll',
-      );
+      this.logger.error(`Failed to add rankings for userID: ${userID} to pollID: ${pollID}`, e);
+      throw new InternalServerErrorException('There was an error adding the rankings');
     }
   }
 
   async addResults(pollID: string, results: Results): Promise<Poll> {
-    this.logger.log(
-      `Attempting to add results to pollID: ${pollID}`,
-      JSON.stringify(results),
-    );
+    this.logger.log(`Attempting to add results to pollID: ${pollID}`, JSON.stringify(results));
 
     const key = `polls:${pollID}`;
-    const resultsPath = `.results`;
 
     try {
-      await this.redisClient.send_command(
-        'JSON.SET',
-        key,
-        resultsPath,
-        JSON.stringify(results),
-      );
+      const currentPoll = await this.redisClient.get(key);
 
-      return this.getPoll(pollID);
+      if (!currentPoll) {
+        throw new InternalServerErrorException(`Poll with ID ${pollID} not found`);
+      }
+
+      const poll = JSON.parse(currentPoll);
+      poll.results = results;
+
+      await this.redisClient.set(key, JSON.stringify(poll));
+
+      return poll;
     } catch (e) {
-      this.logger.error(
-        `Failed to add add results for pollID: ${pollID}`,
-        results,
-        e,
-      );
-      throw new InternalServerErrorException(
-        `Failed to add add results for pollID: ${pollID}`,
-      );
+      this.logger.error(`Failed to add results to pollID: ${pollID}`, e);
+      throw new InternalServerErrorException(`Failed to add results to pollID: ${pollID}`);
     }
   }
 
   async deletePoll(pollID: string): Promise<void> {
+    this.logger.log(`Deleting poll: ${pollID}`);
+
     const key = `polls:${pollID}`;
 
-    this.logger.log(`deleting poll: ${pollID}`);
-
     try {
-      await this.redisClient.send_command('JSON.DEL', key);
+      await this.redisClient.del(key);
     } catch (e) {
       this.logger.error(`Failed to delete poll: ${pollID}`, e);
-      throw new InternalServerErrorException(
-        `Failed to delete poll: ${pollID}`,
-      );
+      throw new InternalServerErrorException(`Failed to delete poll: ${pollID}`);
     }
   }
 }

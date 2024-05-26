@@ -24,12 +24,16 @@ let PollsController = class PollsController {
     constructor(pollsService) {
         this.pollsService = pollsService;
     }
+    async getPoll(id) {
+        const result = await this.pollsService.getPoll(id);
+        return result;
+    }
     async create(createPollDto) {
         const result = await this.pollsService.createPoll(createPollDto);
         return result;
     }
     async join(joinPollDto) {
-        console.log(...oo_oo(`572437972_19_4_19_46_4`, "hello from polls controller"));
+        console.log(...oo_oo(`655811498_26_4_26_46_4`, "hello from polls controller"));
         const result = await this.pollsService.joinPoll(joinPollDto);
         return result;
     }
@@ -44,6 +48,13 @@ let PollsController = class PollsController {
     }
 };
 exports.PollsController = PollsController;
+__decorate([
+    (0, common_1.Get)('get/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], PollsController.prototype, "getPoll", null);
 __decorate([
     (0, common_3.Post)(),
     __param(0, (0, common_3.Body)()),
