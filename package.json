@@ -35,6 +35,7 @@
     "dependencies": {
         "@nestjs/config": "^3.2.2",
         "@nestjs/jwt": "^10.2.0",
+        "@nestjs/platform-express": "^7.5.5",
         "@nestjs/platform-socket.io": "^10.3.8",
         "@nestjs/websockets": "^10.3.8",
         "express": "^4.19.2",

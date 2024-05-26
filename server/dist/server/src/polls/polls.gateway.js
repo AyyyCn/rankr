@@ -22,10 +22,12 @@ const socket_io_1 = require("socket.io");
 const gateway_admin_guard_1 = require("./gateway-admin.guard");
 const dtos_1 = require("./dtos");
 let PollsGateway = PollsGateway_1 = class PollsGateway {
+    pollsService;
+    logger = new common_1.Logger(PollsGateway_1.name);
     constructor(pollsService) {
         this.pollsService = pollsService;
-        this.logger = new common_1.Logger(PollsGateway_1.name);
     }
+    io;
     afterInit() {
         this.logger.log(`Websocket Gateway initialized.`);
     }

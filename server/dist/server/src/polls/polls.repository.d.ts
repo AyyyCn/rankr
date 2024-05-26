@@ -3,11 +3,12 @@ import { Redis } from 'ioredis';
 import { AddNominationData, AddParticipantData, AddParticipantRankingsData, CreatePollData } from './types';
 import { Poll, Results } from 'shared';
 export declare class PollsRepository {
+    private configService;
     private readonly redisClient;
     private readonly ttl;
     private readonly logger;
     constructor(configService: ConfigService, redisClient: Redis);
-    createPoll({ votesPerVoter, topic, pollID, userID, }: CreatePollData): Promise<Poll>;
+    createPoll({ votesPerVoter, topic, pollID, userID }: CreatePollData): Promise<Poll>;
     getPoll(pollID: string): Promise<Poll>;
     addParticipant({ pollID, userID, name, }: AddParticipantData): Promise<Poll>;
     removeParticipant(pollID: string, userID: string): Promise<Poll>;

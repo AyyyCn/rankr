@@ -12,6 +12,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.NominationDto = exports.JoinPollDto = exports.CreatePollDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreatePollDto {
+    topic;
+    votesPerVoter;
+    name;
 }
 exports.CreatePollDto = CreatePollDto;
 __decorate([
@@ -31,6 +34,8 @@ __decorate([
     __metadata("design:type", String)
 ], CreatePollDto.prototype, "name", void 0);
 class JoinPollDto {
+    pollID;
+    name;
 }
 exports.JoinPollDto = JoinPollDto;
 __decorate([
@@ -44,6 +49,7 @@ __decorate([
     __metadata("design:type", String)
 ], JoinPollDto.prototype, "name", void 0);
 class NominationDto {
+    text;
 }
 exports.NominationDto = NominationDto;
 __decorate([

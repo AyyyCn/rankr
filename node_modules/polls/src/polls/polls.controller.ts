@@ -11,6 +11,7 @@ export class PollsController {
   constructor(private pollsService: PollsService) {}
   @Post()
   async create(@Body() createPollDto: CreatePollDto) {
+    console.log("hello from polls controller")
     const result = await this.pollsService.createPoll(createPollDto);
     return result;
   }

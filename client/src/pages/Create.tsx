@@ -30,7 +30,14 @@ const Create: React.FC = () => {
     const handleCreatePoll = async () => {
       actions.startLoading();
       setApiError('');
-  
+    
+      // Validate input fields
+      if (!pollTopic.trim() || !name.trim()) {
+        setApiError('Name and poll topic are both required!');
+        actions.stopLoading();
+        return;
+      }
+    
       const { data, error } = await makeRequest<{
         poll: Poll;
         accessToken: string;
@@ -39,25 +46,28 @@ const Create: React.FC = () => {
         body: JSON.stringify({
           topic: pollTopic,
           votesPerVoter: maxVotes,
-          name,
+          name: name,
         }),
       });
-  
+    
       console.log(data, error);
-  
-      if (error && error.statusCode === 400) {
-        console.log('400 error', error);
-        setApiError('Name and poll topic are both required!');
-      } else if (error && error.statusCode !== 400) {
-        setApiError(error.messages[0]);
+    
+      if (error) {
+        if (error.statusCode === 400) {
+          console.log('400 error', error);
+          setApiError('Name and poll topic are both required!');
+        } else {
+          setApiError(error.messages[0]);
+        }
       } else {
         actions.initializePoll(data.poll);
         actions.setPollAccessToken(data.accessToken);
         actions.setPage(AppPage.WaitingRoom);
       }
-  
+    
       actions.stopLoading();
     };
+    
   
     return (
       <div className="flex flex-col w-full justify-around items-stretch h-full mx-auto max-w-sm">

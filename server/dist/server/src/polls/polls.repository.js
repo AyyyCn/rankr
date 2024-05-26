@@ -15,16 +15,20 @@ var PollsRepository_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PollsRepository = void 0;
 const common_1 = require("@nestjs/common");
-const common_2 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
+const common_2 = require("@nestjs/common");
 const redis_module_1 = require("../redis/redis.module");
 let PollsRepository = PollsRepository_1 = class PollsRepository {
+    configService;
+    redisClient;
+    ttl;
+    logger = new common_2.Logger(PollsRepository_1.name);
     constructor(configService, redisClient) {
+        this.configService = configService;
         this.redisClient = redisClient;
-        this.logger = new common_2.Logger(PollsRepository_1.name);
-        this.ttl = configService.get('POLL_DURATION');
+        this.ttl = this.configService.get('POLL_DURATION') || 7200;
     }
-    async createPoll({ votesPerVoter, topic, pollID, userID, }) {
+    async createPoll({ votesPerVoter, topic, pollID, userID }) {
         const initialPoll = {
             id: pollID,
             topic,
@@ -40,16 +44,14 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
         const key = `polls:${pollID}`;
         try {
             await this.redisClient
-                .multi([
-                ['send_command', 'JSON.SET', key, '.', JSON.stringify(initialPoll)],
-                ['expire', key, this.ttl],
-            ])
+                .multi()
+                .set(key, JSON.stringify(initialPoll))
+                .expire(key, this.ttl)
                 .exec();
             return initialPoll;
         }
         catch (e) {
-            this.logger.error(`Failed to add poll ${JSON.stringify(initialPoll)}\n${e}`);
-            throw new common_1.InternalServerErrorException();
+            throw new common_1.InternalServerErrorException(`Failed to add poll to Redis: ${e.message}`);
         }
     }
     async getPoll(pollID) {
@@ -169,7 +171,7 @@ let PollsRepository = PollsRepository_1 = class PollsRepository {
 };
 exports.PollsRepository = PollsRepository;
 exports.PollsRepository = PollsRepository = PollsRepository_1 = __decorate([
-    (0, common_2.Injectable)(),
+    (0, common_1.Injectable)(),
     __param(1, (0, common_1.Inject)(redis_module_1.IORedisKey)),
     __metadata("design:paramtypes", [config_1.ConfigService, Object])
 ], PollsRepository);

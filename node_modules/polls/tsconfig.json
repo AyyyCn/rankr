@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "module": "ESNext",
+    //"module": "ESNext",
     "target": "ESNext",
     "esModuleInterop": true,
-    //"module": "commonjs",
+    "module": "commonjs",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
