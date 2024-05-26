@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { AppActions, AppState } from './State';
+
 export const socketIOUrl = `http://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/${import.meta.env.VITE_POLLS_NAMESPACE}`;
 
 type CreateSocketOptions = {
@@ -8,7 +9,7 @@ type CreateSocketOptions = {
   actions: AppActions;
 };
 
-export const createSocketWithHandlers = ({ socketIOUrl, state, actions }) => {
+export const createSocketWithHandlers = ({ socketIOUrl, state, actions }: CreateSocketOptions): Socket => {
   const socket = io(socketIOUrl, {
     auth: {
       token: state.accessToken,
@@ -26,6 +27,13 @@ export const createSocketWithHandlers = ({ socketIOUrl, state, actions }) => {
         pollID: state.poll.id,
       });
     }
+    actions.stopLoading();
+  });
+
+  socket.on('connect_error', () => {
+    console.log(`Failed to connect socket`);
+
+    actions.stopLoading();
   });
 
   socket.on('disconnect', (reason) => {
@@ -36,6 +44,7 @@ export const createSocketWithHandlers = ({ socketIOUrl, state, actions }) => {
     }, 3000);
   });
 
+  
   socket.on('poll_updated', (poll) => {
     actions.updatePoll(poll);
   });
