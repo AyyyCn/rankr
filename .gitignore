@@ -1,0 +1,44 @@
+# Node modules
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Build directories
+server/dist/
+client/dist/
+
+# Dependency directories
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# dotenv environment variables file
+.env
+
+# Editor directories and files
+.vscode/
+.idea/
+.DS_Store
+
+# Ignore TypeScript build info files
+tsconfig.build.tsbuildinfo
+
+# MacOS files
+.DS_Store
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp

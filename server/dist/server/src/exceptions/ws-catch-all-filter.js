@@ -11,10 +11,11 @@ const common_1 = require("@nestjs/common");
 const ws_exceptions_1 = require("./ws-exceptions");
 let WsCatchAllFilter = class WsCatchAllFilter {
     catch(exception, host) {
+        var _a, _b;
         const socket = host.switchToWs().getClient();
         if (exception instanceof common_1.BadRequestException) {
             const exceptionData = exception.getResponse();
-            const exceptionMessage = exceptionData['message'] ?? exceptionData ?? exception.name;
+            const exceptionMessage = (_b = (_a = exceptionData['message']) !== null && _a !== void 0 ? _a : exceptionData) !== null && _b !== void 0 ? _b : exception.name;
             const wsException = new ws_exceptions_1.WsBadRequestException(exceptionMessage);
             socket.emit('exception', wsException.getError());
             return;

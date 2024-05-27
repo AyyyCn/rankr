@@ -28,6 +28,7 @@ let PollsController = class PollsController {
         return result;
     }
     async join(joinPollDto) {
+        console.log("hello from polls controller");
         const result = await this.pollsService.joinPoll(joinPollDto);
         return result;
     }

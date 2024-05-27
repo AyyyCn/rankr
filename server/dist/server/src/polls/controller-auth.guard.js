@@ -29,7 +29,7 @@ let ControllerAuthGuard = ControllerAuthGuard_1 = class ControllerAuthGuard {
             request.name = payload.name;
             return true;
         }
-        catch {
+        catch (_a) {
             throw new common_1.ForbiddenException('Invalid authorization token');
         }
     }
